@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hero Registry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0a0f;
+      --surface:  #12121a;
+      --card:     #1a1a26;
+      --border:   #2a2a3d;
+      --accent:   #e8c547;
+      --accent2:  #e05c3a;
+      --text:     #e8e8f0;
+      --muted:    #6b6b88;
+      --radius:   12px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+    }
+
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    .layout {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .logo-mark {
+      width: 52px;
+      height: 52px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: #0a0a0f;
+      flex-shrink: 0;
+      box-shadow: 0 0 32px rgba(232,197,71,0.25);
+    }
+
+    header h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(40px, 7vw, 68px);
+      line-height: 1;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+
+    header h1 span { color: var(--accent); }
+
+    .hero-count {
+      margin-left: auto;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: right;
+      line-height: 1.5;
+    }
+    .hero-count strong {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--accent);
+      display: block;
+      line-height: 1;
+    }
+
+    /* Two-column layout */
+    .columns {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 720px) {
+      .columns { grid-template-columns: 1fr; }
+    }
+
+    /* Form panel */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .panel h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+      color: var(--accent);
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,197,71,0.12);
+    }
+
+    input::placeholder { color: var(--muted); }
+
+    select option { background: var(--card); }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: #0a0a0f;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(232,197,71,0.2);
+    }
+
+    .btn:hover { background: #f0d15a; box-shadow: 0 6px 28px rgba(232,197,71,0.35); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; box-shadow: none; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      z-index: 100;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: var(--accent); }
+    .toast.error   { border-color: var(--accent2); }
+
+    /* Hero list */
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .list-header h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 180px;
+      padding-left: 32px;
+      font-size: 13px;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+    }
+
+    /* Hero cards */
+    #hero-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hero-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      animation: slideIn 0.3s ease;
+      transition: border-color 0.2s;
+    }
+
+    .hero-card:hover { border-color: var(--accent); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-avatar {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .hero-info { flex: 1; min-width: 0; }
+
+    .hero-name {
+      font-weight: 500;
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hero-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .hero-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+      background: rgba(232,197,71,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(232,197,71,0.25);
+    }
+
+    .badge.power {
+      background: rgba(224,92,58,0.12);
+      color: #e07a5f;
+      border-color: rgba(224,92,58,0.25);
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+      display: flex;
+      flex-shrink: 0;
+    }
+
+    .delete-btn:hover { color: var(--accent2); background: rgba(224,92,58,0.1); }
+
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .empty svg { margin-bottom: 12px; opacity: 0.3; }
+    .empty p { font-size: 14px; }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <header>
+    <div class="logo-mark">H</div>
+    <h1>HERO <span>REGISTRY</span></h1>
+    <div class="hero-count">
+      <strong id="count">0</strong>
+      heroes enrolled
+    </div>
+  </header>
+
+  <div class="columns">
+
+    <!-- Form -->
+    <div class="panel">
+      <h2>Enroll a Hero</h2>
+      <form id="hero-form" onsubmit="submitHero(event)">
+        <div class="field">
+          <label>Hero Name *</label>
+          <input id="name" type="text" placeholder="e.g. Deadpond" required/>
+        </div>
+        <div class="field">
+          <label>Secret Identity *</label>
+          <input id="secret_name" type="text" placeholder="e.g. Dive Wilson" required/>
+        </div>
+        <div class="field">
+          <label>Age</label>
+          <input id="age" type="number" placeholder="e.g. 32" min="1" max="999"/>
+        </div>
+        <div class="field">
+          <label>Power</label>
+          <select id="power">
+            <option value="">— Select power —</option>
+            <option>Super strength</option>
+            <option>Speed</option>
+            <option>Flight</option>
+            <option>Telepathy</option>
+            <option>Invisibility</option>
+            <option>Healing factor</option>
+            <option>Time manipulation</option>
+            <option>Tech genius</option>
+          </select>
+        </div>
+        <button class="btn" type="submit" id="submit-btn">ENROLL HERO</button>
+      </form>
+    </div>
+
+    <!-- List -->
+    <div>
+      <div class="list-header">
+        <h2>Active Heroes</h2>
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search" placeholder="Search..." oninput="filterHeroes()"/>
+        </div>
+      </div>
+      <div id="hero-list"><div class="loading">Loading heroes…</div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';   // same origin — FastAPI serves this file
+let allHeroes = [];
+
+async function loadHeroes() {
+  try {
+    const res = await fetch(`${API}/heroes`);
+    allHeroes = await res.json();
+    renderHeroes(allHeroes);
+  } catch (e) {
+    document.getElementById('hero-list').innerHTML =
+      `<div class="empty"><p>Could not reach server.<br>Make sure the backend is running.</p></div>`;
+  }
+}
+
+function renderHeroes(heroes) {
+  const list = document.getElementById('hero-list');
+  document.getElementById('count').textContent = allHeroes.length;
+
+  if (!heroes.length) {
+    list.innerHTML = `<div class="empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <p>No heroes yet. Enroll the first one!</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = heroes.map(h => `
+    <div class="hero-card" id="card-${h.id}">
+      <div class="hero-avatar">${h.name[0].toUpperCase()}</div>
+      <div class="hero-info">
+        <div class="hero-name">${esc(h.name)}</div>
+        <div class="hero-meta">🕵️ ${esc(h.secret_name)}${h.age ? ` · age ${h.age}` : ''}</div>
+      </div>
+      <div class="hero-badges">
+        ${h.power ? `<span class="badge power">${esc(h.power)}</span>` : ''}
+        <span class="badge">#${h.id}</span>
+      </div>
+      <button class="delete-btn" onclick="deleteHero(${h.id})" title="Remove hero">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+function filterHeroes() {
+  const q = document.getElementById('search').value.toLowerCase();
+  renderHeroes(q ? allHeroes.filter(h =>
+    h.name.toLowerCase().includes(q) ||
+    h.secret_name.toLowerCase().includes(q) ||
+    (h.power || '').toLowerCase().includes(q)
+  ) : allHeroes);
+}
+
+async function submitHero(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'ENROLLING…';
+
+  const body = {
+    name:        document.getElementById('name').value.trim(),
+    secret_name: document.getElementById('secret_name').value.trim(),
+    age:         document.getElementById('age').value ? parseInt(document.getElementById('age').value) : null,
+    power:       document.getElementById('power').value || null,
+  };
+
+  try {
+    const res = await fetch(`${API}/heroes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error('Server error');
+    const hero = await res.json();
+    allHeroes.unshift(hero);
+    renderHeroes(allHeroes);
+    document.getElementById('hero-form').reset();
+    showToast(`✦ ${hero.name} enrolled!`, 'success');
+  } catch (err) {
+    showToast('Failed to enroll hero.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ENROLL HERO';
+  }
+}
+
+async function deleteHero(id) {
+  const card = document.getElementById(`card-${id}`);
+  if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
+  try {
+    await fetch(`${API}/heroes/${id}`, { method: 'DELETE' });
+    allHeroes = allHeroes.filter(h => h.id !== id);
+    renderHeroes(allHeroes);
+    showToast('Hero removed.', 'success');
+  } catch {
+    if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
+    showToast('Could not delete hero.', 'error');
+  }
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadHeroes();
+</script>
+</body>
+</html>
